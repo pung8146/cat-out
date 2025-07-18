@@ -22,7 +22,7 @@ export class GameScene extends Phaser.Scene {
 
   // 소코반 관련 변수들
   private isDragging: boolean = false;
-  private dragStart: { x: number; y: number } | null = null;
+  private dragOrigin: { x: number; y: number } | null = null;
   private lastValidPosition: { x: number; y: number } = { x: 140, y: 140 };
   private geckoDirection:
     | "horizontal"
@@ -227,38 +227,74 @@ export class GameScene extends Phaser.Scene {
       );
       if (bounds.contains(pointer.x, pointer.y)) {
         this.isDragging = true;
-        this.dragStart = { x: pointer.x, y: pointer.y };
-        this.dirState = null;
+        this.dragOrigin = { x: pointer.x, y: pointer.y };
+        // 클릭 위치와 머리의 차이로 방향 결정
+        const dx = pointer.x - head.x;
+        const dy = pointer.y - head.y;
+        const dir: { x: number; y: number } = { x: 0, y: 0 };
+        if (Math.abs(dx) > Math.abs(dy)) {
+          dir.x = dx > 0 ? 1 : -1;
+        } else {
+          dir.y = dy > 0 ? 1 : -1;
+        }
+        this.dirState = dir;
+        this.tryMoveSnake(dir);
         this.startMoveTimer();
       }
     });
     this.input.on("pointermove", (pointer: Phaser.Input.Pointer) => {
-      if (!this.isDragging || !this.dragStart) return;
-      const dx = pointer.x - this.dragStart.x;
-      const dy = pointer.y - this.dragStart.y;
-      if (Math.abs(dx) < this.tileSize / 2 && Math.abs(dy) < this.tileSize / 2)
-        return;
+      if (!this.isDragging || !this.dragOrigin) return;
+      const dx = pointer.x - this.dragOrigin.x;
+      const dy = pointer.y - this.dragOrigin.y;
       const dir: { x: number; y: number } = { x: 0, y: 0 };
       if (Math.abs(dx) > Math.abs(dy)) {
         dir.x = dx > 0 ? 1 : -1;
       } else {
         dir.y = dy > 0 ? 1 : -1;
       }
-      // 방향이 바뀌면 즉시 이동 및 타이머 방향 갱신
+      // 같은 방향이면 무시
       if (
-        !this.dirState ||
-        this.dirState.x !== dir.x ||
-        this.dirState.y !== dir.y
-      ) {
+        this.dirState &&
+        dir.x === this.dirState.x &&
+        dir.y === this.dirState.y
+      )
+        return;
+      // 반대 방향으로 tileSize/2 이상 움직였을 때만 방향 전환
+      if (this.dirState) {
+        // x축 방향 전환
+        if (
+          this.dirState.x !== 0 &&
+          Math.abs(dx) > this.tileSize / 2 &&
+          dir.x !== this.dirState.x
+        ) {
+          this.dirState = dir;
+          this.dragOrigin = { x: pointer.x, y: pointer.y };
+          this.tryMoveSnake(dir);
+          this.restartMoveTimer();
+        }
+        // y축 방향 전환
+        else if (
+          this.dirState.y !== 0 &&
+          Math.abs(dy) > this.tileSize / 2 &&
+          dir.y !== this.dirState.y
+        ) {
+          this.dirState = dir;
+          this.dragOrigin = { x: pointer.x, y: pointer.y };
+          this.tryMoveSnake(dir);
+          this.restartMoveTimer();
+        }
+      } else {
+        // 최초 방향 결정
         this.dirState = dir;
+        this.dragOrigin = { x: pointer.x, y: pointer.y };
         this.tryMoveSnake(dir);
         this.restartMoveTimer();
       }
     });
     this.input.on("pointerup", () => {
       this.isDragging = false;
-      this.dragStart = null;
       this.dirState = null;
+      this.dragOrigin = null;
       this.clearMoveTimer();
     });
   }
