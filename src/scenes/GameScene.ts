@@ -145,6 +145,8 @@ export class GameScene extends Phaser.Scene {
       { x: 60, y: 140 }, // 꼬리 (더 왼쪽)
     ];
 
+    console.log("도마뱀 생성 - 초기 경로:", this.geckoPath);
+
     // 세 개의 네모로 도마뱀 구성 (가로 3칸)
     for (let i = 0; i < this.geckoLength; i++) {
       const part = this.add.graphics();
@@ -169,7 +171,18 @@ export class GameScene extends Phaser.Scene {
 
       // 경로에 따라 위치 설정
       const pathPos = this.geckoPath[i];
-      part.setPosition(pathPos.x - this.gecko.x, pathPos.y - this.gecko.y);
+      if (pathPos) {
+        part.setPosition(pathPos.x - this.gecko.x, pathPos.y - this.gecko.y);
+        console.log(
+          `초기 파트 ${i} 위치: (${pathPos.x - this.gecko.x}, ${
+            pathPos.y - this.gecko.y
+          })`
+        );
+      } else {
+        console.log(`초기 경로 ${i}가 없음!`);
+        // 기본 위치로 설정
+        part.setPosition((i - 1) * this.tileSize, 0);
+      }
 
       this.geckoParts.push(part);
       this.gecko.add(part);
@@ -185,6 +198,8 @@ export class GameScene extends Phaser.Scene {
       ),
       Phaser.Geom.Rectangle.Contains
     );
+
+    console.log("도마뱀 생성 완료");
   }
 
   private createUI() {
@@ -298,15 +313,12 @@ export class GameScene extends Phaser.Scene {
         if (this.canMoveTo(snappedX - this.gecko.x, snappedY - this.gecko.y)) {
           console.log("이동 가능:", snappedX, snappedY);
 
-          // 스네이크 스타일 이동: 새로운 머리 위치를 경로 맨 앞에 추가
-          this.updateGeckoPath(snappedX, snappedY);
-
           this.gecko.x = snappedX;
           this.gecko.y = snappedY;
           this.lastValidPosition = { x: snappedX, y: snappedY };
 
           // 도마뱀 레이아웃 업데이트
-          this.updateGeckoLayoutFromPath();
+          this.updateGeckoLayout();
         } else {
           console.log("이동 불가능:", snappedX, snappedY);
         }
@@ -390,21 +402,49 @@ export class GameScene extends Phaser.Scene {
   }
 
   private updateGeckoPath(newX: number, newY: number) {
-    // 새로운 머리 위치를 경로 맨 앞에 추가
-    this.geckoPath.unshift({ x: newX, y: newY });
+    console.log("경로 업데이트 시작:", newX, newY);
+    console.log("업데이트 전 경로:", this.geckoPath);
 
-    // 경로 길이를 3칸으로 유지 (꼬리 제거)
-    if (this.geckoPath.length > this.geckoLength) {
-      this.geckoPath.pop();
+    // 경로가 비어있거나 모든 위치가 같으면 초기 경로 설정
+    if (
+      this.geckoPath.length === 0 ||
+      this.geckoPath.every((pos) => pos.x === newX && pos.y === newY)
+    ) {
+      console.log("경로 초기화 - 모든 위치가 같음");
+      this.geckoPath = [
+        { x: newX, y: newY },
+        { x: newX - this.tileSize, y: newY },
+        { x: newX - this.tileSize * 2, y: newY },
+      ];
+    } else {
+      // 새로운 머리 위치를 경로 맨 앞에 추가
+      this.geckoPath.unshift({ x: newX, y: newY });
+
+      // 경로 길이를 3칸으로 유지 (꼬리 제거)
+      while (this.geckoPath.length > this.geckoLength) {
+        this.geckoPath.pop();
+      }
     }
 
-    console.log("경로 업데이트:", this.geckoPath);
+    console.log("업데이트 후 경로:", this.geckoPath);
+    console.log("경로 길이:", this.geckoPath.length);
   }
 
   private updateGeckoLayoutFromPath() {
     // 기존 파트들 제거
     this.geckoParts.forEach((part) => part.destroy());
     this.geckoParts = [];
+
+    console.log("경로 기반 레이아웃 업데이트 시작");
+    console.log("현재 경로:", this.geckoPath);
+    console.log("경로 길이:", this.geckoPath.length);
+
+    // 경로가 충분하지 않으면 기본 레이아웃으로 폴백
+    if (this.geckoPath.length < this.geckoLength) {
+      console.log("경로가 부족함, 기본 레이아웃으로 폴백");
+      this.updateGeckoLayout();
+      return;
+    }
 
     // 경로에 따라 파트들 재생성
     for (let i = 0; i < this.geckoLength; i++) {
@@ -430,7 +470,18 @@ export class GameScene extends Phaser.Scene {
 
       // 경로에 따라 위치 설정
       const pathPos = this.geckoPath[i];
-      part.setPosition(pathPos.x - this.gecko.x, pathPos.y - this.gecko.y);
+      if (pathPos) {
+        part.setPosition(pathPos.x - this.gecko.x, pathPos.y - this.gecko.y);
+        console.log(
+          `파트 ${i} 위치: (${pathPos.x - this.gecko.x}, ${
+            pathPos.y - this.gecko.y
+          })`
+        );
+      } else {
+        console.log(`경로 ${i}가 없음!`);
+        // 기본 위치로 설정
+        part.setPosition((i - 1) * this.tileSize, 0);
+      }
 
       this.geckoParts.push(part);
       this.gecko.add(part);
@@ -448,7 +499,7 @@ export class GameScene extends Phaser.Scene {
       Phaser.Geom.Rectangle.Contains
     );
 
-    console.log("도마뱀 레이아웃 업데이트 (경로 기반)");
+    console.log("도마뱀 레이아웃 업데이트 (경로 기반) 완료");
   }
 
   private calculateGeckoBounds() {
@@ -478,6 +529,8 @@ export class GameScene extends Phaser.Scene {
     this.geckoParts.forEach((part) => part.destroy());
     this.geckoParts = [];
 
+    console.log("레이아웃 업데이트 - 방향:", this.geckoDirection);
+
     // 새로운 방향에 따라 파트들 재생성
     for (let i = 0; i < this.geckoLength; i++) {
       const part = this.add.graphics();
@@ -504,26 +557,38 @@ export class GameScene extends Phaser.Scene {
       if (this.geckoDirection === "horizontal") {
         // 가로 방향: 중앙 기준으로 좌우 배치
         part.setPosition((i - 1) * this.tileSize, 0);
+        console.log(`가로 파트 ${i} 위치: (${(i - 1) * this.tileSize}, 0)`);
       } else if (this.geckoDirection === "vertical") {
         // 세로 방향: 중앙 기준으로 상하 배치
         part.setPosition(0, (i - 1) * this.tileSize);
+        console.log(`세로 파트 ${i} 위치: (0, ${(i - 1) * this.tileSize})`);
       } else if (this.geckoDirection === "L-horizontal") {
         // L자 가로: 가로 2칸 + 세로 1칸
         if (i === 0) {
           part.setPosition(0, 0); // 머리 (중앙)
+          console.log(`L가로 파트 ${i} 위치: (0, 0)`);
         } else if (i === 1) {
           part.setPosition(-this.tileSize, 0); // 몸통 (왼쪽)
+          console.log(`L가로 파트 ${i} 위치: (-${this.tileSize}, 0)`);
         } else {
           part.setPosition(-this.tileSize, this.tileSize); // 꼬리 (왼쪽 아래)
+          console.log(
+            `L가로 파트 ${i} 위치: (-${this.tileSize}, ${this.tileSize})`
+          );
         }
       } else if (this.geckoDirection === "L-vertical") {
         // L자 세로: 세로 2칸 + 가로 1칸
         if (i === 0) {
           part.setPosition(0, 0); // 머리 (중앙)
+          console.log(`L세로 파트 ${i} 위치: (0, 0)`);
         } else if (i === 1) {
           part.setPosition(0, -this.tileSize); // 몸통 (위쪽)
+          console.log(`L세로 파트 ${i} 위치: (0, -${this.tileSize})`);
         } else {
           part.setPosition(this.tileSize, -this.tileSize); // 꼬리 (오른쪽 위)
+          console.log(
+            `L세로 파트 ${i} 위치: (${this.tileSize}, -${this.tileSize})`
+          );
         }
       }
 
@@ -576,7 +641,7 @@ export class GameScene extends Phaser.Scene {
       );
     }
 
-    console.log("도마뱀 방향 변경:", this.geckoDirection);
+    console.log("도마뱀 레이아웃 업데이트 완료");
   }
 
   private moveGecko(dx: number, dy: number) {
