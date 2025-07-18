@@ -1,0 +1,128 @@
+.App {
+  text-align: center;
+  min-height: 100vh;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  font-family: "Arial", sans-serif;
+}
+
+.App-header {
+  padding: 20px;
+  background: rgba(0, 0, 0, 0.2);
+  margin-bottom: 20px;
+}
+
+.App-header h1 {
+  margin: 0;
+  font-size: 2.5rem;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+main {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: calc(100vh - 120px);
+}
+
+.menu {
+  background: rgba(255, 255, 255, 0.1);
+  padding: 40px;
+  border-radius: 15px;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  max-width: 500px;
+  width: 90%;
+}
+
+.menu h2 {
+  margin-bottom: 20px;
+  font-size: 1.8rem;
+}
+
+.menu p {
+  margin-bottom: 30px;
+  font-size: 1.1rem;
+  line-height: 1.6;
+}
+
+.start-button,
+.restart-button {
+  background: linear-gradient(45deg, #ff6b6b, #ee5a24);
+  color: white;
+  border: none;
+  padding: 15px 30px;
+  font-size: 1.2rem;
+  border-radius: 25px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+.start-button:hover,
+.restart-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+}
+
+.game-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+}
+
+.game-info {
+  background: rgba(255, 255, 255, 0.1);
+  padding: 15px 30px;
+  border-radius: 10px;
+  backdrop-filter: blur(10px);
+  display: flex;
+  gap: 30px;
+  font-size: 1.2rem;
+  font-weight: bold;
+}
+
+.game-info p {
+  margin: 0;
+}
+
+.game-over {
+  background: rgba(255, 255, 255, 0.1);
+  padding: 40px;
+  border-radius: 15px;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  max-width: 500px;
+  width: 90%;
+}
+
+.game-over h2 {
+  margin-bottom: 20px;
+  font-size: 2rem;
+  color: #ff6b6b;
+}
+
+.game-over p {
+  margin-bottom: 15px;
+  font-size: 1.2rem;
+}
+
+/* 반응형 디자인 */
+@media (max-width: 768px) {
+  .App-header h1 {
+    font-size: 2rem;
+  }
+
+  .menu,
+  .game-over {
+    padding: 30px 20px;
+    width: 95%;
+  }
+
+  .game-info {
+    flex-direction: column;
+    gap: 10px;
+  }
+}
