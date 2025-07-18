@@ -32,6 +32,9 @@ export class GameScene extends Phaser.Scene {
   private geckoLength: number = 3; // 도마뱀 길이 (3칸)
   private geckoPath: { x: number; y: number }[] = [];
   private lastDirection: { x: number; y: number } = { x: 1, y: 0 }; // 마지막 이동 방향
+  private moveInterval: number = 150; // 연속 이동 간격(ms)
+  private moveTimer: number | null = null;
+  private dirState: { x: number; y: number } | null = null;
 
   constructor() {
     super({ key: "GameScene" });
@@ -215,7 +218,6 @@ export class GameScene extends Phaser.Scene {
 
   private setupMouseControls() {
     this.input.on("pointerdown", (pointer: Phaser.Input.Pointer) => {
-      // 도마뱀 머리 기준 경계
       const head = this.geckoPath[0];
       const bounds = new Phaser.Geom.Rectangle(
         head.x - this.tileSize / 2,
@@ -226,13 +228,14 @@ export class GameScene extends Phaser.Scene {
       if (bounds.contains(pointer.x, pointer.y)) {
         this.isDragging = true;
         this.dragStart = { x: pointer.x, y: pointer.y };
+        this.dirState = null;
+        this.startMoveTimer();
       }
     });
     this.input.on("pointermove", (pointer: Phaser.Input.Pointer) => {
       if (!this.isDragging || !this.dragStart) return;
       const dx = pointer.x - this.dragStart.x;
       const dy = pointer.y - this.dragStart.y;
-      // 한 칸 이상 움직였는지, 그리고 상하좌우 중 가장 큰 방향만 허용
       if (Math.abs(dx) < this.tileSize / 2 && Math.abs(dy) < this.tileSize / 2)
         return;
       const dir: { x: number; y: number } = { x: 0, y: 0 };
@@ -241,14 +244,43 @@ export class GameScene extends Phaser.Scene {
       } else {
         dir.y = dy > 0 ? 1 : -1;
       }
-      this.tryMoveSnake(dir);
-      this.isDragging = false;
-      this.dragStart = null;
+      // 방향이 바뀌면 즉시 이동 및 타이머 방향 갱신
+      if (
+        !this.dirState ||
+        this.dirState.x !== dir.x ||
+        this.dirState.y !== dir.y
+      ) {
+        this.dirState = dir;
+        this.tryMoveSnake(dir);
+        this.restartMoveTimer();
+      }
     });
     this.input.on("pointerup", () => {
       this.isDragging = false;
       this.dragStart = null;
+      this.dirState = null;
+      this.clearMoveTimer();
     });
+  }
+
+  private startMoveTimer() {
+    this.clearMoveTimer();
+    this.moveTimer = window.setInterval(() => {
+      if (this.dirState) {
+        this.tryMoveSnake(this.dirState);
+      }
+    }, this.moveInterval);
+  }
+
+  private restartMoveTimer() {
+    this.startMoveTimer();
+  }
+
+  private clearMoveTimer() {
+    if (this.moveTimer !== null) {
+      clearInterval(this.moveTimer);
+      this.moveTimer = null;
+    }
   }
 
   private tryMoveSnake(dir: { x: number; y: number }) {
